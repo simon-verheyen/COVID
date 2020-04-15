@@ -7,7 +7,7 @@ import datetime
 
 
 def read_csv(name, title):
-    df = pd.read_csv('../data/' + name + '.csv')
+    df = pd.read_csv('../data/COVID/' + name + '.csv')
     df['Date'] = df['Date'].astype('datetime64[ns]') 
     df = df.drop(columns='Cases on an international conveyance Japan')
     df = df.set_index('Date')
@@ -31,7 +31,7 @@ df_incidence_daily = read_csv('incidence_daily', 'Daily incidence')
 df_incidence_3days = read_csv('incidence_3days', '3days incidence')
 df_incidence_weekly = read_csv('incidence_weekly', 'Weekly incidence')
 
-df_thresholds = pd.read_csv('../data/thresholds.csv').set_index('ind')
+df_thresholds = pd.read_csv('../data/COVID/thresholds.csv').set_index('ind')
                               
 df_prevalence = read_csv('prevalence', 'Prevalence')
 df_deaths_population = read_csv('deaths_population', 'Deaths over population')
@@ -195,33 +195,7 @@ def plot_spread(subj, per, countries=countries_all, scale='lin', days=len(dates_
     ax2.set_xlabel(label2)
 
     plt.show()
-    
-def threshold_data(df, subj, per, countries=[], reset=True):
-    d = {}
-    for country in countries:
-        start_date = df_thresholds.at[subj, country]
 
-        allowed_dates = df.index[df.index >= start_date]
-        allowed_dates = allowed_dates[[date in eval('dates_' + per) for date in allowed_dates]]
-        mask = [date in allowed_dates for date in df.index]
-        
-        country_data = df.loc[mask][country]
-        if reset: 
-            country_data = country_data.reset_index(drop=True)
-            
-        d[country] = country_data
-
-    df_new = pd.DataFrame(d)
-    if reset:
-        if per == '3days':
-            df_new['index'] = df_new.reset_index()['index'] * 3
-            df_new = df_new.set_index('index')
-        elif per == 'weekly':
-            df_new['index'] = df_new.reset_index()['index'] * 7
-            df_new = df_new.set_index('index')
-
-    return df_new
-    
 def plot_trends_dynamically(name, countries=[]):
     fig, ax = plt.subplots(figsize=(17,9))
     leg = ax.legend()
