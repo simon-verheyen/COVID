@@ -108,7 +108,32 @@ def plot_mortality(countries=[], days=len(dates_daily)):
     ax2.set_ylabel('Deaths per million')
     ax2.set_xlabel('')              
     
-    
+def threshold_data(df, subj, per, countries=[], reset=True):
+    d = {}
+    for country in countries:
+        start_date = df_thresholds.at[subj, country]
+
+        allowed_dates = df.index[df.index >= start_date]
+        allowed_dates = allowed_dates[[date in eval('dates_' + per) for date in allowed_dates]]
+        mask = [date in allowed_dates for date in df.index]
+
+        country_data = df.loc[mask][country]
+        if reset:
+            country_data = country_data.reset_index(drop=True)
+
+        d[country] = country_data
+
+    df_new = pd.DataFrame(d)
+    if reset:
+        if per == '3days':
+            df_new['index'] = df_new.reset_index()['index'] * 3
+            df_new = df_new.set_index('index')
+        elif per == 'weekly':
+            df_new['index'] = df_new.reset_index()['index'] * 7
+            df_new = df_new.set_index('index')
+
+    return df_new
+
 def plot_spread(subj, per, countries=countries_all, scale='lin', days=len(dates_daily), leg='l'):
     fig, (ax1, ax2) = plt.subplots(ncols=2)
     label1 = ''
@@ -278,49 +303,3 @@ def show_table(countries=countries_all):
     df = pd.DataFrame(dict_data, index=ind)
         
     return df.style
-
-"""
-OLD FUNCTIONS:
-
-
-
-def plot_trends(countries=countries_all, log=True, subj='spread', per='weekly'):
-    plt.figure(figsize=(17,9))
-    leg = True
-    
-    if subj == 'impact':
-        x = 'prevalence'
-        y = 'incidence_' + per
-        
-        plt.xlabel('Prevalence (total cases / population)')
-        plt.ylabel('Incidence (' + per + ' cases / population)') 
-    elif subj == 'spread':
-        x = 'cases_total'
-        y = 'cases_' + per
-        
-        plt.xlabel('Total cases')
-        plt.ylabel(per + ' cases')
-    
-    df_x_full = eval('df_' + x)
-    df_y_full = eval('df_' + y)
-    
-    df_x_full = threshold_data(df_x_full, 'cases', per, countries, reset=True)
-    df_y_full = threshold_data(df_y_full, 'cases', per, countries, reset=True)
-
-    for country in countries:
-        plt.plot(df_x_full[country], df_y_full[country], label=country)
-        
-    if len(countries) != len(countries_all):
-        plt.legend(loc='upper left', frameon=False)
-    
-    if log:
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(np.maximum(-np.log10(y),0)))).format(y)))
-        plt.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(int(np.maximum(-np.log10(y),0)))).format(y)))
-        ax.set_xlabel('Prevalence (Cases per Million)')
-        ax.set_ylabel('Incidence (New cases per million)')
-        
-    plt.title('Trends (log scale)')
-    plt.show()
-"""
